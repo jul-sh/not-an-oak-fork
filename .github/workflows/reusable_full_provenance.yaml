@@ -15,6 +15,7 @@ on:
 jobs:
   get_inputs:
     outputs:
+      artifact-path: ${{ steps.parse-build-config.outputs.artifact-path }}
       builder-digest: ${{ steps.builder-digest.outputs.builder-digest }}
 
     runs-on: ubuntu-20.04
@@ -22,6 +23,18 @@ jobs:
     steps:
       - name: Mount main branch
         uses: actions/checkout@v3
+
+      - name: Parse build config
+        id: parse-build-config
+        run: |
+          set -o errexit
+          set -o nounset
+          set -o xtrace
+          set -o pipefail
+          artifact_path="$(tail -1 ${{ inputs.build-config-path }} | grep -oP 'artifact_path = \K(.*)')"
+          package_name="$(basename ${{ inputs.build-config-path }} .toml)"
+          echo "artifact-path=${artifact_path}" >> $GITHUB_OUTPUT
+          echo "package-name=${package_name}" >> $GITHUB_OUTPUT
 
       - name: Get builder image info
         id: builder-digest
@@ -55,3 +68,17 @@ jobs:
       config-path: ${{ inputs.build-config-path }}
       provenance-name: attestation.intoto
       compile-builder: true
+
+  gh_provenance:
+    needs: [get_inputs, generate_provenance]
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@897ed5eab6ed058a474202017ada7f40bfa52940 # v1.0.0
+        with:
+          subject-path: ${{ needs.get_inputs.outputs.artifact-path }}
+          push-to-registry: true

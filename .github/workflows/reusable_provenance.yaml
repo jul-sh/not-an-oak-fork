@@ -76,6 +76,7 @@ jobs:
     permissions:
       actions: read
       id-token: write
+      attestations: write
       contents: write # For uploading provenances.
     # We are a pre-release of the slsa-github-generator. This is because the
     # current release does not include fix for the action deadlocking.
@@ -88,6 +89,20 @@ jobs:
       config-path: ${{ inputs.build-config-path }}
       provenance-name: attestation.intoto
       compile-builder: true
+
+  gh_provenance:
+    needs: [get_inputs, generate_provenance]
+    runs-on: ubuntu-20.04
+    permissions:
+      actions: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@897ed5eab6ed058a474202017ada7f40bfa52940 # v1.0.0
+        with:
+          subject-path: ${{ needs.get_inputs.outputs.artifact-path }}
+          push-to-registry: true
 
   # This job uploads the signed provenance from the previous step to Ent, and
   # publishes a comment for each binary on the PR.

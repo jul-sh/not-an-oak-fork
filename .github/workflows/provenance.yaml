@@ -46,6 +46,7 @@ jobs:
       contents: write
       # Allow the job to add a comment to the PR.
       pull-requests: write
+      attestations: write
     uses: ./.github/workflows/reusable_provenance.yaml
     with:
       build-config-path: ${{ matrix.buildconfig }}

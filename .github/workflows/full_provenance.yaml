@@ -35,6 +35,7 @@ jobs:
       actions: read
       id-token: write
       contents: write # For uploading provenances.
+      attestations: write
     uses: ./.github/workflows/reusable_full_provenance.yaml
     with:
       build-config-path: ${{ matrix.buildconfig }}
